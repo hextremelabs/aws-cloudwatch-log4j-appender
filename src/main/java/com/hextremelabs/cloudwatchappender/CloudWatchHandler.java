@@ -151,7 +151,7 @@ public class CloudWatchHandler {
         .append(event.getLevel()).append("  ")
         .append('<').append(hostIpAddress).append("> ")
         .append('[').append(event.getLoggerName()).append("] ")
-        .append('(').append(event.getThreadName()).append("> - ")
+        .append('(').append(event.getThreadName()).append(")\n")
         .append(event.getRenderedMessage());
     if (event.getThrowableStrRep() != null) {
       result.append("\n").append(Joiner.on("\n").join(event.getThrowableStrRep()));
