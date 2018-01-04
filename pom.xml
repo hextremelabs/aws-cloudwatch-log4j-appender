@@ -4,7 +4,7 @@
 
   <groupId>com.hextremelabs.log4j</groupId>
   <artifactId>cloudwatch-appender</artifactId>
-  <version>1.0.Alpha1</version>
+  <version>1.0.Alpha2-SNAPSHOT</version>
 
   <parent>
     <groupId>org.sonatype.oss</groupId>
@@ -36,7 +36,7 @@
     <connection>scm:git:https://github.com/hextremelabs/aws-cloudwatch-log4j-appender.git</connection>
     <developerConnection>scm:git:https://github.com/hextremelabs/aws-cloudwatch-log4j-appender.git</developerConnection>
     <url>https://github.com/hextremelabs/aws-cloudwatch-log4j-appender.git</url>
-    <tag>cloudwatch-appender-1.0.Alpha1</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <properties>
