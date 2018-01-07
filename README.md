@@ -6,15 +6,11 @@ It is often desired that logs be aggregated in specialized logging services as o
 they can be easily made searchable, analyzable and monitorable.
 
 Centralized logging also offers a big value in clustered environments where it may not be clear on which host 
-in the cluster an error occurred.
-
-Finally, in an immutable infrastructure environment where clustered containers are setup and torn down on the fly,
-having a logging infrastructure that is completely independent of the host container is advantageous.
+in the cluster an error occurred. Finally, in an immutable infrastructure environment where containers are setup and torn down on the fly, having a logging infrastructure that is completely independent of the host container is advantageous.
 
 
 NOTE: This appender depends on Java EE 7 scheduler for the log synchronization and `com.hextremelabs:quickee` for
-CDI-based dynamic config injection. These are very opinionated choices but it should be easy to rip them out of 
-the project.
+CDI-based dynamic config injection. These are very opinionated choices and it is easy to fork this repo and rip them out if not desired.
 
 
 ---
@@ -27,7 +23,7 @@ Sample usage:
 <dependency>
   <groupId>com.hextremelabs.log4j</groupId>
   <artifactId>cloudwatch-appender</artifactId>
-  <version>1.0.Alpha1</version>
+  <version>1.0.Alpha2</version>
 </dependency>
 ```
 
@@ -39,4 +35,13 @@ log4j.rootLogger=INFO, cloudwatch
 log4j.appender.cloudwatch=com.hextremelabs.cloudwatchappender.CloudWatchAppender
 log4j.appender.cloudwatch.layout=org.apache.log4j.PatternLayout
 log4j.appender.cloudwatch.layout.ConversionPattern=%d [%t] %-5p %c %x - %m%n
+```
+
+*quickee config keys*
+```
+aws.key                 # Access key for your AWS IAM user
+aws.secret              # Secret key for your AWS IAM user
+cloudwatch.log.region   # AWS region where your logs reside (e.g us-west-1)
+cloudwatch.log.group    # Log group name (e.g my-app-prod)
+cloudwatch.log.stream   # Prefix for log stream names, rotated daily by date (e.g my-app)
 ```
