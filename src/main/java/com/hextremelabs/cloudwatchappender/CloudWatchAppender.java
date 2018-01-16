@@ -1,26 +1,28 @@
 package com.hextremelabs.cloudwatchappender;
 
+import com.amazonaws.annotation.ThreadSafe;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.spi.LoggingEvent;
 
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
-import static java.util.Comparator.comparing;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author oladeji
  */
+@ThreadSafe
 public class CloudWatchAppender extends AppenderSkeleton {
 
-  private static final Queue<LoggingEvent> LOGS = new ConcurrentLinkedQueue<>();
+  private static final AtomicReference<Queue<LoggingEvent>> LOGS = new AtomicReference<>(new ConcurrentLinkedQueue<>());
 
   @Override
   protected void append(LoggingEvent loggingEvent) {
-    LOGS.add(loggingEvent);
+    LOGS.updateAndGet(queue -> {
+      queue.add(loggingEvent);
+      return queue;
+    });
   }
 
   @Override
@@ -32,10 +34,7 @@ public class CloudWatchAppender extends AppenderSkeleton {
     return true;
   }
 
-  public static Collection<LoggingEvent> retrieveLogsAndClear() {
-    final List<LoggingEvent> events = new LinkedList<>();
-    LOGS.removeIf(e -> events.add(e));
-    events.sort(comparing(LoggingEvent::getTimeStamp));
-    return events;
+  static Collection<LoggingEvent> retrieveLogsAndClear() {
+    return LOGS.getAndSet(new ConcurrentLinkedQueue<>());
   }
 }
