@@ -24,12 +24,12 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 class CloudWatchAppenderTest {
 
-  private static final ExecutorService POOL = Executors.newFixedThreadPool(10);
+  private static final ExecutorService POOL = Executors.newFixedThreadPool(100);
 
   @Test()
   void append() {
     final List<Future> futures = new LinkedList<>();
-    for (int a = 0; a < 10; a++) {
+    for (int a = 0; a < 100; a++) {
       futures.add(POOL.submit(newWritingTask()));
     }
 
@@ -61,12 +61,15 @@ class CloudWatchAppenderTest {
   @Test
   void retrieveLogsAndClear() {
     final Collection<LoggingEvent> events = CloudWatchAppender.retrieveLogsAndClear();
-    assertEquals(10000, events.size());
+    assertEquals(100000, events.size());
     final Iterator<LoggingEvent> iterator = events.iterator();
-    LoggingEvent previous = iterator.next();
+    long previous = iterator.next().timeStamp;
     while (iterator.hasNext()) {
-      LoggingEvent current = iterator.next();
-      assertTrue(current.timeStamp >= previous.timeStamp);
+      long current = iterator.next().timeStamp;
+      if (current < previous) {
+        System.out.println(current - previous);
+      }
+      assertTrue(current >= previous);
       previous = current;
     }
   }
