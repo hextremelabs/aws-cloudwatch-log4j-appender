@@ -66,9 +66,6 @@ class CloudWatchAppenderTest {
     long previous = iterator.next().timeStamp;
     while (iterator.hasNext()) {
       long current = iterator.next().timeStamp;
-      if (current < previous) {
-        System.out.println(current - previous);
-      }
       assertTrue(current >= previous);
       previous = current;
     }
