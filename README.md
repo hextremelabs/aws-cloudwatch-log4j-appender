@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/hextremelabs/aws-cloudwatch-log4j-appender.svg?branch=master)](https://travis-ci.org/hextremelabs/aws-cloudwatch-log4j-appender)
+
 Simple Log4J Appender for AWS Cloudwatch Logs
 ------------
 This appender is intended for use in a Java EE environment that supports Log4J for per-deployment logging (e.g WildFly)
