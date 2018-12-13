@@ -142,7 +142,7 @@ public class CloudWatchHandler {
 
   @NotNull
   private String computeAwsLogStreamName() {
-    return logStream + "_" + new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+    return logStream + "_" + new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "_" + hostIpAddress.replace(".", "_");
   }
 
   private String generateMessage(LoggingEvent event) {
