@@ -34,7 +34,7 @@ public class CloudWatchAppender extends AppenderSkeleton {
 
   public static Collection<LoggingEvent> retrieveLogsAndClear() {
     final List<LoggingEvent> events = new LinkedList<>();
-    LOGS.removeIf(e -> events.add(e));
+    LOGS.removeIf(events::add);
     events.sort(comparing(LoggingEvent::getTimeStamp));
     return events;
   }
