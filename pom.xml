@@ -52,7 +52,7 @@
     <dependency>
       <groupId>javax</groupId>
       <artifactId>javaee-api</artifactId>
-      <version>7.0</version>
+      <version>8.0</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -64,7 +64,7 @@
     <dependency>
       <groupId>com.hextremelabs</groupId>
       <artifactId>quickee</artifactId>
-      <version>1.0.Alpha6</version>
+      <version>1.0.Alpha14</version>
       <scope>provided</scope>
     </dependency>
 
@@ -72,14 +72,14 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-logs</artifactId>
-      <version>1.11.228</version>
+      <version>1.11.613</version>
     </dependency>
 
     <!--Test Scope-->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <version>5.0.0</version>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>5.5.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -124,20 +124,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.19.1</version>
-
-        <dependencies>
-          <dependency>
-            <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-surefire-provider</artifactId>
-            <version>1.0.0-RC2</version>
-          </dependency>
-          <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.0.0</version>
-          </dependency>
-        </dependencies>
+        <version>2.22.1</version>
       </plugin>
 
     </plugins>

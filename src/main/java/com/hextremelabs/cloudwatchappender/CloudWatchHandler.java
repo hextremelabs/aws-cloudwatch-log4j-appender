@@ -13,7 +13,6 @@ import com.amazonaws.services.logs.model.PutLogEventsRequest;
 import com.hextremelabs.quickee.configuration.Config;
 import com.hextremelabs.quickee.core.Joiner;
 import org.apache.log4j.spi.LoggingEvent;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Schedule;
@@ -140,15 +139,16 @@ public class CloudWatchHandler {
     nextSequenceToken = client.putLogEvents(request).getNextSequenceToken();
   }
 
-  @NotNull
   private String computeAwsLogStreamName() {
     return logStream + "_" + new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "_" + hostIpAddress.replace(".", "_");
   }
 
   private String generateMessage(LoggingEvent event) {
     final StringBuilder result = new StringBuilder()
-        .append(event.getLevel()).append(' ')
+        .append(formatTimestamp(event.getTimeStamp())).append(' ')
+        .append(event.getLevel()).append("  ")
         .append('<').append(hostIpAddress).append("> ")
+        .append('[').append(event.getLoggerName()).append("] ")
         .append('(').append(event.getThreadName()).append(")\n")
         .append(event.getRenderedMessage());
     if (event.getThrowableStrRep() != null) {
@@ -158,12 +158,10 @@ public class CloudWatchHandler {
     return result.toString();
   }
 
-  @NotNull
   private String formatTimestamp(long timestamp) {
     return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS").format(new Date(timestamp));
   }
 
-  @NotNull
   private String getHostIpAddress() {
     final Enumeration<NetworkInterface> interfaces;
     try {
