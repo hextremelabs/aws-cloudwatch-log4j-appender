@@ -3,7 +3,6 @@ package com.hextremelabs.cloudwatchappender;
 import org.apache.log4j.Category;
 import org.apache.log4j.Priority;
 import org.apache.log4j.spi.LoggingEvent;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
@@ -49,7 +48,14 @@ class CloudWatchAppenderTest {
   private static void generate100kLogs() {
     final List<Future> futures = new LinkedList<>();
     for (int a = 0; a < 100; a++) {
-      futures.add(POOL.submit(newWritingTask()));
+      futures.add(POOL.submit(() -> {
+        final CloudWatchAppender sut = new CloudWatchAppender();
+        for (int a1 = 0; a1 < 1000; a1++) {
+          LoggingEvent event = new LoggingEvent("stuff", Category.getRoot(),
+              Priority.ERROR, "Random event" + (1000 * Math.random()), null);
+          sut.append(event);
+        }
+      }));
     }
 
     futures.removeIf(e -> {
@@ -61,18 +67,6 @@ class CloudWatchAppenderTest {
         return false;
       }
     });
-  }
-
-  @NotNull
-  private static Runnable newWritingTask() {
-    return () -> {
-      final CloudWatchAppender sut = new CloudWatchAppender();
-      for (int a = 0; a < 1000; a++) {
-        LoggingEvent event = new LoggingEvent("stuff", Category.getRoot(),
-            Priority.ERROR, "Random event" + (1000 * Math.random()), null);
-        sut.append(event);
-      }
-    };
   }
 
   @AfterAll
