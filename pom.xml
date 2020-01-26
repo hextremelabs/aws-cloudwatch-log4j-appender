@@ -129,14 +129,6 @@
       </extension>
     </extensions>
 
-    <extensions>
-      <extension>
-        <groupId>com.gkatzioura.maven.cloud</groupId>
-        <artifactId>s3-storage-wagon</artifactId>
-        <version>2.3</version>
-      </extension>
-    </extensions>
-
     <pluginManagement>
       <plugins>
         <plugin>
