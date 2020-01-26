@@ -27,6 +27,7 @@ import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.Random;
 
 import static com.hextremelabs.cloudwatchappender.CloudWatchAppender.retrieveLogsAndClear;
 import static java.net.NetworkInterface.getNetworkInterfaces;
@@ -44,12 +45,6 @@ import static javax.ejb.TransactionAttributeType.NOT_SUPPORTED;
 @Startup
 @TransactionAttribute(NOT_SUPPORTED)
 public class CloudWatchHandler {
-
-  private AWSLogs client;
-
-  private String nextSequenceToken;
-
-  private String hostIpAddress;
 
   @Inject
   @Config("aws.key")
@@ -69,7 +64,15 @@ public class CloudWatchHandler {
 
   @Inject
   @Config("cloudwatch.log.stream")
-  private String logStream;
+  private String logStreamPrefix;
+
+  private AWSLogs client;
+
+  private String nextSequenceToken;
+
+  private String hostIpAddress;
+
+  private final int uniqueInstanceId = new Random().nextInt();
 
   @PostConstruct
   public void setup() {
@@ -140,7 +143,8 @@ public class CloudWatchHandler {
   }
 
   private String computeAwsLogStreamName() {
-    return logStream + "_" + new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "_" + hostIpAddress.replace(".", "_");
+    return Joiner.on("_").join(logStreamPrefix, new SimpleDateFormat("yyyy-MM-dd").format(new Date()),
+        hostIpAddress.replace(".", "_"), uniqueInstanceId);
   }
 
   private String generateMessage(LoggingEvent event) {

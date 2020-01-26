@@ -2,3 +2,8 @@ language: java
 jdk:
   - oraclejdk8
   - openjdk8
+deploy:
+  provider: script
+  script: mvn deploy -DskipTests
+  on:
+    branch: master
