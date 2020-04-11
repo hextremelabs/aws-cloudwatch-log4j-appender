@@ -96,7 +96,6 @@ public class CloudWatchHandler {
     String nextToken = null;
     do {
       final DescribeLogGroupsRequest request = new DescribeLogGroupsRequest();
-      request.setLimit(200);
       request.setLogGroupNamePrefix(logGroup);
       request.setNextToken(nextToken);
 
