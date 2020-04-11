@@ -75,10 +75,15 @@ public class CloudWatchHandler {
 
   private String hostIpAddress;
 
-  private final String uniqueInstanceId = EC2MetadataUtils.getInstanceId();
+  private String uniqueInstanceId;
 
   @PostConstruct
   public void setup() {
+    uniqueInstanceId = EC2MetadataUtils.getInstanceId();
+    if (uniqueInstanceId == null) {
+      uniqueInstanceId = System.currentTimeMillis() + "_random" + new Random().nextInt(1000);
+    }
+
     client = AWSLogsClientBuilder
         .standard()
         .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(awsKey, awsSecret)))
