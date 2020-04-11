@@ -6,10 +6,13 @@ import com.amazonaws.services.logs.AWSLogs;
 import com.amazonaws.services.logs.AWSLogsClientBuilder;
 import com.amazonaws.services.logs.model.CreateLogGroupRequest;
 import com.amazonaws.services.logs.model.CreateLogStreamRequest;
+import com.amazonaws.services.logs.model.DescribeLogGroupsRequest;
+import com.amazonaws.services.logs.model.DescribeLogGroupsResult;
 import com.amazonaws.services.logs.model.DescribeLogStreamsRequest;
 import com.amazonaws.services.logs.model.DescribeLogStreamsResult;
 import com.amazonaws.services.logs.model.InputLogEvent;
 import com.amazonaws.services.logs.model.PutLogEventsRequest;
+import com.amazonaws.util.EC2MetadataUtils;
 import com.hextremelabs.quickee.configuration.Config;
 import com.hextremelabs.quickee.core.Joiner;
 import org.apache.log4j.spi.LoggingEvent;
@@ -72,10 +75,17 @@ public class CloudWatchHandler {
 
   private String hostIpAddress;
 
-  private final int uniqueInstanceId = new Random().nextInt();
+  private String uniqueInstanceId;
 
   @PostConstruct
   public void setup() {
+    try {
+      uniqueInstanceId = EC2MetadataUtils.getInstanceId();
+      if (uniqueInstanceId == null) assignRandomUID();
+    } catch (Exception ex) {
+      assignRandomUID();
+    }
+
     client = AWSLogsClientBuilder
         .standard()
         .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(awsKey, awsSecret)))
@@ -88,9 +98,23 @@ public class CloudWatchHandler {
     rotateLogStream();
   }
 
+  private void assignRandomUID() {
+    uniqueInstanceId = System.currentTimeMillis() + "_random" + new Random().nextInt(1000);
+  }
+
   private void createLogGroup() {
-    final boolean logGroupExists = client.describeLogGroups().getLogGroups()
-        .stream().anyMatch(e -> e.getLogGroupName().equals(logGroup));
+    boolean logGroupExists;
+    String nextToken = null;
+    do {
+      final DescribeLogGroupsRequest request = new DescribeLogGroupsRequest();
+      request.setLogGroupNamePrefix(logGroup);
+      request.setNextToken(nextToken);
+
+      final DescribeLogGroupsResult result = client.describeLogGroups(request);
+      nextToken = result.getNextToken();
+      logGroupExists = result.getLogGroups()
+          .stream().anyMatch(e -> e.getLogGroupName().equals(logGroup));
+    } while (!logGroupExists && nextToken != null);
 
     if (!logGroupExists) {
       final CreateLogGroupRequest request = new CreateLogGroupRequest();
@@ -144,7 +168,7 @@ public class CloudWatchHandler {
 
   private String computeAwsLogStreamName() {
     return Joiner.on("_").join(logStreamPrefix, new SimpleDateFormat("yyyy-MM-dd").format(new Date()),
-        hostIpAddress.replace(".", "_"), uniqueInstanceId);
+        uniqueInstanceId);
   }
 
   private String generateMessage(LoggingEvent event) {
