@@ -11,7 +11,7 @@ Centralized logging also offers a big value in clustered environments where it m
 in the cluster an error occurred. Finally, in an immutable infrastructure environment where containers are setup and torn down on the fly, having a logging infrastructure that is completely independent of the host container is advantageous.
 
 
-NOTE: This appender depends on Java EE 7 scheduler for the log synchronization and `com.hextremelabs:quickee` for
+NOTE: This appender depends on Java EE scheduler for the log synchronization and `com.hextremelabs:quickee` for
 CDI-based dynamic config injection. These are very opinionated choices and it is easy to fork this repo and rip them out if not desired.
 
 
@@ -25,7 +25,7 @@ Sample usage:
 <dependency>
   <groupId>com.hextremelabs.log4j</groupId>
   <artifactId>cloudwatch-appender</artifactId>
-  <version>1.0.Alpha2</version>
+  <version>1.0.Alpha5</version>
 </dependency>
 ```
 
