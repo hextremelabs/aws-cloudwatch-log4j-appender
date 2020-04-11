@@ -79,9 +79,11 @@ public class CloudWatchHandler {
 
   @PostConstruct
   public void setup() {
-    uniqueInstanceId = EC2MetadataUtils.getInstanceId();
-    if (uniqueInstanceId == null) {
-      uniqueInstanceId = System.currentTimeMillis() + "_random" + new Random().nextInt(1000);
+    try {
+      uniqueInstanceId = EC2MetadataUtils.getInstanceId();
+      if (uniqueInstanceId == null) assignRandomUID();
+    } catch (Exception ex) {
+      assignRandomUID();
     }
 
     client = AWSLogsClientBuilder
@@ -94,6 +96,10 @@ public class CloudWatchHandler {
 
     createLogGroup();
     rotateLogStream();
+  }
+
+  private void assignRandomUID() {
+    uniqueInstanceId = System.currentTimeMillis() + "_random" + new Random().nextInt(1000);
   }
 
   private void createLogGroup() {
