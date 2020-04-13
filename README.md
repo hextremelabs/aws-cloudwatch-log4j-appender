@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/hextremelabs/aws-cloudwatch-log4j-appender.svg?branch=master)](https://travis-ci.org/hextremelabs/aws-cloudwatch-log4j-appender)
+![Build Status](https://github.com/hextremelabs/aws-cloudwatch-log4j-appender/workflows/Deploy%20Build/badge.svg)
 
 Simple Log4J Appender for AWS Cloudwatch Logs
 ------------
