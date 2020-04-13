@@ -173,7 +173,7 @@ public class CloudWatchHandler {
 
   private String generateMessage(LoggingEvent event) {
     String loggerName = event.getLoggerName();
-    loggerName = loggerName.substring(loggerName.lastIndexOf('.'));
+    loggerName = loggerName.substring(loggerName.lastIndexOf('.') + 1);
 
     final StringBuilder result = new StringBuilder()
         .append(millisecondUnit(event.getTimeStamp())).append(" | ")
