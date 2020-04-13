@@ -172,22 +172,23 @@ public class CloudWatchHandler {
   }
 
   private String generateMessage(LoggingEvent event) {
+    String loggerName = event.getLoggerName();
+    loggerName = loggerName.substring(loggerName.lastIndexOf('.'));
+
     final StringBuilder result = new StringBuilder()
-        .append(formatTimestamp(event.getTimeStamp())).append(' ')
-        .append(event.getLevel()).append("  ")
-        .append('<').append(hostIpAddress).append("> ")
-        .append('[').append(event.getLoggerName()).append("] ")
-        .append('(').append(event.getThreadName()).append(")\n")
+        .append(millisecondUnit(event.getTimeStamp())).append(" | ")
+        .append(event.getLevel().toString(), 0, 4).append(" ")
+        .append(loggerName).append(": ")
         .append(event.getRenderedMessage());
     if (event.getThrowableStrRep() != null) {
-      result.append("\n").append(Joiner.on("\n").join((Object[]) event.getThrowableStrRep()));
+      result.append("\n").append(String.join("\n", event.getThrowableStrRep()));
     }
 
     return result.toString();
   }
 
-  private String formatTimestamp(long timestamp) {
-    return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS").format(new Date(timestamp));
+  private String millisecondUnit(long timestamp) {
+    return String.format("%03d", timestamp % 1000);
   }
 
   private String getHostIpAddress() {
