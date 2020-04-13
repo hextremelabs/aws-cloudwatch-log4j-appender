@@ -173,14 +173,10 @@ public class CloudWatchHandler {
 
   private String generateMessage(LoggingEvent event) {
     final StringBuilder result = new StringBuilder()
-        .append(formatTimestamp(event.getTimeStamp())).append(' ')
-        .append(event.getLevel()).append("  ")
-        .append('<').append(hostIpAddress).append("> ")
-        .append('[').append(event.getLoggerName()).append("] ")
-        .append('(').append(event.getThreadName()).append(")\n")
+        .append(event.getLevel()).append(": ")
         .append(event.getRenderedMessage());
     if (event.getThrowableStrRep() != null) {
-      result.append("\n").append(Joiner.on("\n").join((Object[]) event.getThrowableStrRep()));
+      result.append("\n").append(String.join("\n", event.getThrowableStrRep()));
     }
 
     return result.toString();
