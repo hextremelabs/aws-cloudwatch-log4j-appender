@@ -18,8 +18,14 @@ public class CloudWatchAppender extends AppenderSkeleton {
 
   private static final Queue<LoggingEvent> LOGS = new ConcurrentLinkedQueue<>();
 
+  private static final String XRAY_ERROR_MESSAGE_TO_SUPPRESS = "Failed to begin subsegment named 'AWSLogs': segment cannot be found";
+
   @Override
   protected void append(LoggingEvent loggingEvent) {
+    if (loggingEvent.getMessage().toString().contains(XRAY_ERROR_MESSAGE_TO_SUPPRESS)) {
+      return;
+    }
+
     LOGS.add(loggingEvent);
   }
 
