@@ -4,7 +4,7 @@
 
   <groupId>com.hextremelabs.log4j</groupId>
   <artifactId>cloudwatch-appender</artifactId>
-  <version>1.0.Alpha10-SNAPSHOT</version>
+  <version>1.0.Alpha11-SNAPSHOT</version>
 
   <parent>
     <groupId>org.sonatype.oss</groupId>
