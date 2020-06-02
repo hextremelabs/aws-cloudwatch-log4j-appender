@@ -178,7 +178,8 @@ public class CloudWatchHandler {
     final StringBuilder result = new StringBuilder()
         .append(millisecondUnit(event.getTimeStamp())).append(" | ")
         .append(event.getLevel().toString(), 0, 4).append(" ")
-        .append(loggerName).append(": ")
+        .append(loggerName)
+        .append(" (").append(event.getThreadName()).append("): ")
         .append(event.getRenderedMessage());
     if (event.getThrowableStrRep() != null) {
       result.append("\n").append(String.join("\n", event.getThrowableStrRep()));
