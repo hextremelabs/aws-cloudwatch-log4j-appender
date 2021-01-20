@@ -11,6 +11,7 @@ import com.amazonaws.services.logs.model.DescribeLogGroupsResult;
 import com.amazonaws.services.logs.model.DescribeLogStreamsRequest;
 import com.amazonaws.services.logs.model.DescribeLogStreamsResult;
 import com.amazonaws.services.logs.model.InputLogEvent;
+import com.amazonaws.services.logs.model.InvalidSequenceTokenException;
 import com.amazonaws.services.logs.model.PutLogEventsRequest;
 import com.amazonaws.util.EC2MetadataUtils;
 import com.hextremelabs.quickee.configuration.Config;
@@ -79,12 +80,9 @@ public class CloudWatchHandler {
 
   @PostConstruct
   public void setup() {
-    try {
-      uniqueInstanceId = EC2MetadataUtils.getInstanceId();
-      if (uniqueInstanceId == null) assignRandomUID();
-    } catch (Exception ex) {
-      assignRandomUID();
-    }
+    String instanceId = EC2MetadataUtils.getInstanceId();
+    if (instanceId == null) instanceId = "EC2-instance-id-not-found";
+    uniqueInstanceId = Joiner.on("_").skipNull().join(instanceId, generateRandomId());
 
     client = AWSLogsClientBuilder
         .standard()
@@ -98,8 +96,8 @@ public class CloudWatchHandler {
     rotateLogStream();
   }
 
-  private void assignRandomUID() {
-    uniqueInstanceId = System.currentTimeMillis() + "_random" + new Random().nextInt(1000);
+  private String generateRandomId() {
+    return System.currentTimeMillis() + "-random" + new Random().nextInt(100000);
   }
 
   private void createLogGroup() {
@@ -131,20 +129,21 @@ public class CloudWatchHandler {
     describeLogStreamsRequest.setLogStreamNamePrefix(logStreamName);
     final DescribeLogStreamsResult logStreamsResult = client.describeLogStreams(describeLogStreamsRequest);
 
-    if (logStreamsResult.getLogStreams().isEmpty()) {
-      final CreateLogStreamRequest request = new CreateLogStreamRequest();
-      request.setLogGroupName(logGroup);
-      request.setLogStreamName(logStreamName);
-      client.createLogStream(request);
-
-      final DescribeLogStreamsRequest newDescribeLogStreamsRequest = new DescribeLogStreamsRequest();
-      newDescribeLogStreamsRequest.setLogGroupName(logGroup);
-      newDescribeLogStreamsRequest.setLogStreamNamePrefix(logStreamName);
-      nextSequenceToken = client.describeLogStreams(newDescribeLogStreamsRequest)
-          .getLogStreams().get(0).getUploadSequenceToken();
-    } else {
+    if (!logStreamsResult.getLogStreams().isEmpty()) {
       nextSequenceToken = logStreamsResult.getLogStreams().get(0).getUploadSequenceToken();
+      return;
     }
+
+    final CreateLogStreamRequest request = new CreateLogStreamRequest();
+    request.setLogGroupName(logGroup);
+    request.setLogStreamName(logStreamName);
+    client.createLogStream(request);
+
+    final DescribeLogStreamsRequest newDescribeLogStreamsRequest = new DescribeLogStreamsRequest();
+    newDescribeLogStreamsRequest.setLogGroupName(logGroup);
+    newDescribeLogStreamsRequest.setLogStreamNamePrefix(logStreamName);
+    nextSequenceToken = client.describeLogStreams(newDescribeLogStreamsRequest)
+        .getLogStreams().get(0).getUploadSequenceToken();
   }
 
   @Schedule(hour = "*", minute = "*", second = "*/7", persistent = false)
@@ -163,12 +162,21 @@ public class CloudWatchHandler {
         .map(this::toInputLogEvent)
         .collect(toList()));
     request.setSequenceToken(nextSequenceToken);
-    nextSequenceToken = client.putLogEvents(request).getNextSequenceToken();
+
+    try {
+      nextSequenceToken = client.putLogEvents(request).getNextSequenceToken();
+    } catch (InvalidSequenceTokenException ex) {
+      // For whatever reason we have messed up the sequence token.
+      // Let's reacquire it, and resend the logs.
+      rotateLogStream();
+      request.setSequenceToken(nextSequenceToken);
+      nextSequenceToken = client.putLogEvents(request).getNextSequenceToken();
+    }
   }
 
   private String computeAwsLogStreamName() {
     return Joiner.on("_").join(logStreamPrefix, new SimpleDateFormat("yyyy-MM-dd").format(new Date()),
-        uniqueInstanceId);
+        hostIpAddress, uniqueInstanceId);
   }
 
   private String generateMessage(LoggingEvent event) {
