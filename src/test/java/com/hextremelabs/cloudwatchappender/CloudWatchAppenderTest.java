@@ -46,7 +46,7 @@ class CloudWatchAppenderTest {
   }
 
   private static void generate100kLogs() {
-    final List<Future> futures = new LinkedList<>();
+    final List<Future<?>> futures = new LinkedList<>();
     for (int a = 0; a < 100; a++) {
       futures.add(POOL.submit(() -> {
         final CloudWatchAppender sut = new CloudWatchAppender();
