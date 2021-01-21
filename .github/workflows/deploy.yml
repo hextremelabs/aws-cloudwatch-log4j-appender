@@ -19,4 +19,7 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_REGION: ${{ secrets.AWS_REGION }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: mvn release:prepare release:perform -B -DskipTests -DscmCommentPrefix="[skip ci]"
+      run: |
+        git config --global user.email "oluwasayo@hextremelabs.com"
+        git config --global user.name "Maven Release"
+        mvn release:prepare release:perform -B -DskipTests -DscmCommentPrefix="[skip ci]"
