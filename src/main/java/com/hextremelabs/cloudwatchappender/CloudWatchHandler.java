@@ -1,22 +1,21 @@
 package com.hextremelabs.cloudwatchappender;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.logs.AWSLogs;
-import com.amazonaws.services.logs.AWSLogsClientBuilder;
-import com.amazonaws.services.logs.model.CreateLogGroupRequest;
-import com.amazonaws.services.logs.model.CreateLogStreamRequest;
-import com.amazonaws.services.logs.model.DescribeLogGroupsRequest;
-import com.amazonaws.services.logs.model.DescribeLogGroupsResult;
-import com.amazonaws.services.logs.model.DescribeLogStreamsRequest;
-import com.amazonaws.services.logs.model.DescribeLogStreamsResult;
-import com.amazonaws.services.logs.model.InputLogEvent;
-import com.amazonaws.services.logs.model.InvalidSequenceTokenException;
-import com.amazonaws.services.logs.model.PutLogEventsRequest;
-import com.amazonaws.util.EC2MetadataUtils;
+
 import com.hextremelabs.quickee.configuration.Config;
 import com.hextremelabs.quickee.core.Joiner;
 import org.apache.log4j.spi.LoggingEvent;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.regions.internal.util.EC2MetadataUtils;
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
+import software.amazon.awssdk.services.cloudwatchlogs.model.CreateLogGroupRequest;
+import software.amazon.awssdk.services.cloudwatchlogs.model.CreateLogStreamRequest;
+import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogGroupsRequest;
+import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsRequest;
+import software.amazon.awssdk.services.cloudwatchlogs.model.InputLogEvent;
+import software.amazon.awssdk.services.cloudwatchlogs.model.InvalidSequenceTokenException;
+import software.amazon.awssdk.services.cloudwatchlogs.model.PutLogEventsRequest;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Schedule;
@@ -70,7 +69,7 @@ public class CloudWatchHandler {
   @Config("cloudwatch.log.stream")
   private String logStreamPrefix;
 
-  private AWSLogs client;
+  private CloudWatchLogsClient client;
 
   private String nextSequenceToken;
 
@@ -84,10 +83,14 @@ public class CloudWatchHandler {
     if (instanceId == null) instanceId = "EC2-instance-id-not-found";
     uniqueInstanceId = Joiner.on("_").skipNull().join(instanceId, generateRandomId());
 
-    client = AWSLogsClientBuilder
-        .standard()
-        .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(awsKey, awsSecret)))
-        .withRegion(region)
+    client = CloudWatchLogsClient.builder()
+        .region(Region.of(region))
+        .credentialsProvider(StaticCredentialsProvider.create(
+            AwsBasicCredentials.create(
+                awsKey,
+                awsSecret
+            )
+        ))
         .build();
 
     hostIpAddress = getHostIpAddress();
@@ -104,19 +107,21 @@ public class CloudWatchHandler {
     boolean logGroupExists;
     String nextToken = null;
     do {
-      final DescribeLogGroupsRequest request = new DescribeLogGroupsRequest();
-      request.setLogGroupNamePrefix(logGroup);
-      request.setNextToken(nextToken);
+      final DescribeLogGroupsRequest request = DescribeLogGroupsRequest.builder()
+          .logGroupNamePrefix(logGroup)
+          .nextToken(nextToken)
+          .build();
 
-      final DescribeLogGroupsResult result = client.describeLogGroups(request);
-      nextToken = result.getNextToken();
-      logGroupExists = result.getLogGroups()
-          .stream().anyMatch(e -> e.getLogGroupName().equals(logGroup));
+      var result = client.describeLogGroups(request);
+      nextToken = result.nextToken();
+      logGroupExists = result.logGroups()
+          .stream().anyMatch(e -> e.logGroupName().equals(logGroup));
     } while (!logGroupExists && nextToken != null);
 
     if (!logGroupExists) {
-      final CreateLogGroupRequest request = new CreateLogGroupRequest();
-      request.setLogGroupName(logGroup);
+      final CreateLogGroupRequest request = CreateLogGroupRequest.builder()
+          .logGroupName(logGroup)
+          .build();
       client.createLogGroup(request);
     }
   }
@@ -124,26 +129,31 @@ public class CloudWatchHandler {
   @Schedule(persistent = false)
   public void rotateLogStream() {
     final String logStreamName = computeAwsLogStreamName();
-    final DescribeLogStreamsRequest describeLogStreamsRequest = new DescribeLogStreamsRequest();
-    describeLogStreamsRequest.setLogGroupName(logGroup);
-    describeLogStreamsRequest.setLogStreamNamePrefix(logStreamName);
-    final DescribeLogStreamsResult logStreamsResult = client.describeLogStreams(describeLogStreamsRequest);
+    final DescribeLogStreamsRequest describeLogStreamsRequest = DescribeLogStreamsRequest.builder()
+        .logGroupName(logGroup)
+        .logStreamNamePrefix(logStreamName)
+        .build();
 
-    if (!logStreamsResult.getLogStreams().isEmpty()) {
-      nextSequenceToken = logStreamsResult.getLogStreams().get(0).getUploadSequenceToken();
+    final var logStreamsResult = client.describeLogStreams(describeLogStreamsRequest);
+
+    if (!logStreamsResult.logStreams().isEmpty()) {
+      nextSequenceToken = logStreamsResult.logStreams().get(0).uploadSequenceToken();
       return;
     }
 
-    final CreateLogStreamRequest request = new CreateLogStreamRequest();
-    request.setLogGroupName(logGroup);
-    request.setLogStreamName(logStreamName);
+    final CreateLogStreamRequest request = CreateLogStreamRequest.builder()
+        .logGroupName(logGroup)
+        .logStreamName(logStreamName)
+        .build();
+
     client.createLogStream(request);
 
-    final DescribeLogStreamsRequest newDescribeLogStreamsRequest = new DescribeLogStreamsRequest();
-    newDescribeLogStreamsRequest.setLogGroupName(logGroup);
-    newDescribeLogStreamsRequest.setLogStreamNamePrefix(logStreamName);
+    final DescribeLogStreamsRequest newDescribeLogStreamsRequest = DescribeLogStreamsRequest.builder()
+        .logGroupName(logGroup)
+        .logStreamNamePrefix(logStreamName)
+        .build();
     nextSequenceToken = client.describeLogStreams(newDescribeLogStreamsRequest)
-        .getLogStreams().get(0).getUploadSequenceToken();
+        .logStreams().get(0).uploadSequenceToken();
   }
 
   @Schedule(hour = "*", minute = "*", second = "*/7", persistent = false)
@@ -153,24 +163,37 @@ public class CloudWatchHandler {
       return;
     }
 
-    final PutLogEventsRequest request = new PutLogEventsRequest();
-    request.setLogGroupName(logGroup);
-    request.setLogStreamName(computeAwsLogStreamName());
-    request.setLogEvents(pendingLogs.stream()
-        .filter(e -> (e.getRenderedMessage() != null && !e.getRenderedMessage().isEmpty())
-            || e.getThrowableInformation() != null)
-        .map(this::toInputLogEvent)
-        .collect(toList()));
-    request.setSequenceToken(nextSequenceToken);
+    final PutLogEventsRequest request = PutLogEventsRequest.builder()
+        .logGroupName(logGroup)
+        .logStreamName(computeAwsLogStreamName())
+        .logEvents(pendingLogs.stream()
+            .filter(e -> (e.getRenderedMessage() != null && !e.getRenderedMessage().isEmpty())
+                || e.getThrowableInformation() != null)
+            .map(this::toInputLogEvent)
+            .collect(toList()))
+        .sequenceToken(nextSequenceToken)
+        .build();
+
 
     try {
-      nextSequenceToken = client.putLogEvents(request).getNextSequenceToken();
+      nextSequenceToken = client.putLogEvents(request).nextSequenceToken();
     } catch (InvalidSequenceTokenException ex) {
       // For whatever reason we have messed up the sequence token.
       // Let's reacquire it, and resend the logs.
       rotateLogStream();
-      request.setSequenceToken(nextSequenceToken);
-      nextSequenceToken = client.putLogEvents(request).getNextSequenceToken();
+
+      final var request2 = PutLogEventsRequest.builder()
+          .logGroupName(logGroup)
+          .logStreamName(computeAwsLogStreamName())
+          .logEvents(pendingLogs.stream()
+              .filter(e -> (e.getRenderedMessage() != null && !e.getRenderedMessage().isEmpty())
+                  || e.getThrowableInformation() != null)
+              .map(this::toInputLogEvent)
+              .collect(toList()))
+          .sequenceToken(nextSequenceToken)
+          .build();
+
+      nextSequenceToken = client.putLogEvents(request2).nextSequenceToken();
     }
   }
 
@@ -232,9 +255,10 @@ public class CloudWatchHandler {
   }
 
   private InputLogEvent toInputLogEvent(LoggingEvent event) {
-    final InputLogEvent result = new InputLogEvent();
-    result.setMessage(generateMessage(event));
-    result.setTimestamp(event.getTimeStamp());
+    final InputLogEvent result = InputLogEvent.builder()
+        .message(generateMessage(event))
+        .timestamp(event.getTimeStamp())
+        .build();
     return result;
   }
 }

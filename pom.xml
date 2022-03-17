@@ -97,15 +97,15 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-logs</artifactId>
-      <version>1.11.922</version>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>cloudwatchlogs</artifactId>
+      <version>2.17.148</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.hextremelabs</groupId>
       <artifactId>quickee</artifactId>
-      <version>2.0.1</version>
+      <version>2.0.19</version>
       <scope>provided</scope>
     </dependency>
 
