@@ -179,10 +179,10 @@ public class CloudWatchHandler {
     try {
       nextSequenceToken = client.putLogEvents(request).nextSequenceToken();
     } catch (InvalidSequenceTokenException | ResourceNotFoundException ex) {
-      // ResourceNotFoundException: If the Java application process is running on a different timezone than UTC (AWS),
-      // there would be a window of time when computeAwsLogStreamName() would return a log stream name that does not
-      // exist (i.e. when either of AWS or Java moves to a new day before the other as the date is part of the log
-      // stream name). This is fine.
+      // ResourceNotFoundException: If the JVM process is running on a different timezone than UTC (AWS), there would
+      // be a window of time when computeAwsLogStreamName() would return a log stream name that does not exist (i.e.
+      // when either of AWS or Java moves to a new day before the other as the date is part of the log stream name).
+      // This is okay.
 
       // InvalidSequenceTokenException: For whatever reason we have messed up the sequence token. This is fine if it's
       // a one-off event. If it keeps reoccurring then we have an extremely rare concurrency issue where this singleton
