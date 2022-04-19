@@ -15,12 +15,12 @@
 
   <name>${project.groupId}:${project.artifactId}</name>
   <description>A simple Log4J appender intended for use in Java EE environment</description>
-  <url>http://www.hextremelabs.com/</url>
+  <url>https://www.hextremelabs.com/</url>
 
   <licenses>
     <license>
       <name>Apache License 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
     </license>
   </licenses>
 
@@ -29,7 +29,7 @@
       <name>Sayo Oladeji</name>
       <email>oluwasayo@hextremelabs.com</email>
       <organization>Hextremelabs</organization>
-      <organizationUrl>http://www.hextremelabs.com</organizationUrl>
+      <organizationUrl>https://www.hextremelabs.com</organizationUrl>
     </developer>
   </developers>
 
@@ -90,30 +90,32 @@
       <version>8.0.1</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <version>1.2.17</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>cloudwatchlogs</artifactId>
-      <version>2.17.148</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.hextremelabs</groupId>
-      <artifactId>quickee</artifactId>
-      <version>2.0.19</version>
-      <scope>provided</scope>
-    </dependency>
+    <!-- This is not vulnerable as mis-reported by tools as it's provided-scoped -->
+    <!-- Pinned to this version as it's what WildFly supports, see why https://stackoverflow.com/a/70332538 -->
+   <dependency>
+     <groupId>log4j</groupId>
+     <artifactId>log4j</artifactId>
+     <version>1.2.17</version>
+     <scope>provided</scope>
+   </dependency>
+   <dependency>
+     <groupId>software.amazon.awssdk</groupId>
+     <artifactId>cloudwatchlogs</artifactId>
+     <version>2.17.165</version>
+     <scope>provided</scope>
+   </dependency>
+   <dependency>
+     <groupId>com.hextremelabs</groupId>
+     <artifactId>quickee</artifactId>
+     <version>2.0.21</version>
+     <scope>provided</scope>
+   </dependency>
 
-    <!--Test Scope-->
+   <!--Test Scope-->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
-      <version>5.7.0</version>
+      <version>5.8.2</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
