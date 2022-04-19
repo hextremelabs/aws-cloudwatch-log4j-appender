@@ -127,7 +127,6 @@ public class CloudWatchHandler {
     }
   }
 
-  @Schedule(persistent = false)
   public void rotateLogStream() {
     final String logStreamName = computeAwsLogStreamName();
     final DescribeLogStreamsRequest describeLogStreamsRequest = DescribeLogStreamsRequest.builder()
@@ -179,10 +178,7 @@ public class CloudWatchHandler {
     try {
       nextSequenceToken = client.putLogEvents(request).nextSequenceToken();
     } catch (InvalidSequenceTokenException | ResourceNotFoundException ex) {
-      // ResourceNotFoundException: If the JVM process is running on a different timezone than UTC (AWS), there would
-      // be a window of time when computeAwsLogStreamName() would return a log stream name that does not exist (i.e.
-      // when either of AWS or Java moves to a new day before the other as the date is part of the log stream name).
-      // This is okay.
+      // ResourceNotFoundException: When we move to a new day and the log stream for the day is not yet created.
 
       // InvalidSequenceTokenException: For whatever reason we have messed up the sequence token. This is fine if it's
       // a one-off event. If it keeps reoccurring then we have an extremely rare concurrency issue where this singleton
@@ -190,7 +186,7 @@ public class CloudWatchHandler {
       // with the same random tag; and they're competing for the sequence token. In such a case, kill one of the
       // processes.
 
-      // In any case, let's recreate the log stream if it doesn't exist and reacquire the sequence token.
+      // In either case, let's recreate the log stream if it doesn't exist and reacquire the sequence token.
       rotateLogStream();
 
       final var request2 = PutLogEventsRequest.builder()
