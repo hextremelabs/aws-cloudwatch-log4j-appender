@@ -1,12 +1,12 @@
 package com.hextremelabs.cloudwatchappender;
 
-
 import com.hextremelabs.quickee.configuration.Config;
 import com.hextremelabs.quickee.core.Joiner;
 import com.hextremelabs.quickee.time.Clock;
 import org.apache.log4j.spi.LoggingEvent;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.internal.util.EC2MetadataUtils;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
@@ -80,8 +80,13 @@ public class CloudWatchHandler {
 
   @PostConstruct
   public void setup() {
-    String instanceId = EC2MetadataUtils.getInstanceId();
-    if (instanceId == null) instanceId = "EC2-instance-id-not-found";
+    String instanceId;
+    try {
+      instanceId = EC2MetadataUtils.getInstanceId();
+    } catch (SdkClientException ex) {
+      instanceId = "EC2-instance-id-not-found";
+    }
+
     uniqueInstanceId = Joiner.on("_").skipNull().join(instanceId, generateRandomId());
 
     client = CloudWatchLogsClient.builder()
@@ -108,19 +113,23 @@ public class CloudWatchHandler {
     boolean logGroupExists;
     String nextToken = null;
     do {
-      final DescribeLogGroupsRequest request = DescribeLogGroupsRequest.builder()
+      final DescribeLogGroupsRequest request = DescribeLogGroupsRequest
+          .builder()
           .logGroupNamePrefix(logGroup)
           .nextToken(nextToken)
           .build();
 
       var result = client.describeLogGroups(request);
       nextToken = result.nextToken();
-      logGroupExists = result.logGroups()
-          .stream().anyMatch(e -> e.logGroupName().equals(logGroup));
+      logGroupExists = result
+          .logGroups()
+          .stream()
+          .anyMatch(e -> e.logGroupName().equals(logGroup));
     } while (!logGroupExists && nextToken != null);
 
     if (!logGroupExists) {
-      final CreateLogGroupRequest request = CreateLogGroupRequest.builder()
+      final CreateLogGroupRequest request = CreateLogGroupRequest
+          .builder()
           .logGroupName(logGroup)
           .build();
       client.createLogGroup(request);
@@ -163,7 +172,8 @@ public class CloudWatchHandler {
       return;
     }
 
-    final PutLogEventsRequest request = PutLogEventsRequest.builder()
+    final PutLogEventsRequest request = PutLogEventsRequest
+        .builder()
         .logGroupName(logGroup)
         .logStreamName(computeAwsLogStreamName())
         .logEvents(pendingLogs.stream()
@@ -189,7 +199,8 @@ public class CloudWatchHandler {
       // In either case, let's recreate the log stream if it doesn't exist and reacquire the sequence token.
       rotateLogStream();
 
-      final var request2 = PutLogEventsRequest.builder()
+      final var request2 = PutLogEventsRequest
+          .builder()
           .logGroupName(logGroup)
           .logStreamName(computeAwsLogStreamName())
           .logEvents(pendingLogs.stream()
