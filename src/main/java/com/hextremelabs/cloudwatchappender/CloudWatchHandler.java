@@ -3,6 +3,12 @@ package com.hextremelabs.cloudwatchappender;
 import com.hextremelabs.quickee.configuration.Config;
 import com.hextremelabs.quickee.core.Joiner;
 import com.hextremelabs.quickee.time.Clock;
+import jakarta.annotation.PostConstruct;
+import jakarta.ejb.Schedule;
+import jakarta.ejb.Singleton;
+import jakarta.ejb.Startup;
+import jakarta.ejb.TransactionAttribute;
+import jakarta.inject.Inject;
 import org.apache.log4j.spi.LoggingEvent;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -19,12 +25,6 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.InvalidSequenceToken
 import software.amazon.awssdk.services.cloudwatchlogs.model.PutLogEventsRequest;
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResourceNotFoundException;
 
-import javax.annotation.PostConstruct;
-import javax.ejb.Schedule;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.ejb.TransactionAttribute;
-import javax.inject.Inject;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -34,9 +34,9 @@ import java.util.Enumeration;
 import java.util.Random;
 
 import static com.hextremelabs.cloudwatchappender.CloudWatchAppender.retrieveLogsAndClear;
+import static jakarta.ejb.TransactionAttributeType.NOT_SUPPORTED;
 import static java.net.NetworkInterface.getNetworkInterfaces;
 import static java.util.stream.Collectors.toList;
-import static javax.ejb.TransactionAttributeType.NOT_SUPPORTED;
 
 /**
  * AWS Cloudwatch Logs integration.
@@ -277,10 +277,9 @@ public class CloudWatchHandler {
   }
 
   private InputLogEvent toInputLogEvent(LoggingEvent event) {
-    final InputLogEvent result = InputLogEvent.builder()
+    return InputLogEvent.builder()
         .message(generateMessage(event))
         .timestamp(event.getTimeStamp())
         .build();
-    return result;
   }
 }
