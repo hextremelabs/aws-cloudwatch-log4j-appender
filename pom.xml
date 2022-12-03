@@ -93,10 +93,9 @@
     <!-- This is not vulnerable as mis-reported by tools as it's provided-scoped -->
     <!-- Pinned to this version as it's what WildFly supports, see why https://stackoverflow.com/a/70332538 -->
     <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <version>1.2.17</version>
-      <scope>provided</scope>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-1.2-api</artifactId>
+      <version>2.19.0</version>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
