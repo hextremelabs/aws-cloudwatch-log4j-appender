@@ -8,13 +8,13 @@
     <version>9</version>
   </parent>
 
-  <groupId>com.hextremelabs.log4j</groupId>
-  <artifactId>cloudwatch-appender</artifactId>
-  <version>2.0.5-SNAPSHOT</version>
+  <groupId>com.hextremelabs.logs</groupId>
+  <artifactId>wildfly-handlers</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>${project.groupId}:${project.artifactId}</name>
-  <description>A simple Log4J appender intended for use in Java EE environment</description>
+  <description>WildFly custom log handlers</description>
   <url>https://www.hextremelabs.com/</url>
 
   <licenses>
@@ -46,6 +46,12 @@
 
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
+
+    <kotlin.version>1.7.22</kotlin.version>
+
+    <cloudwatchlogs.version>2.18.27</cloudwatchlogs.version>
+    <jboss-logmanager.version>2.1.19.Final</jboss-logmanager.version>
+    <quickee.version>2.0.21</quickee.version>
   </properties>
 
   <repositories>
@@ -85,29 +91,22 @@
   <dependencies>
     <!--Provided Scope-->
     <dependency>
-      <groupId>jakarta.platform</groupId>
-      <artifactId>jakarta.jakartaee-api</artifactId>
-      <version>10.0.0</version>
+      <groupId>org.jboss.logmanager</groupId>
+      <artifactId>jboss-logmanager</artifactId>
+      <version>${jboss-logmanager.version}</version>
       <scope>provided</scope>
     </dependency>
-    <!-- This is not vulnerable as mis-reported by tools as it's provided-scoped -->
-    <!-- Pinned to this version as it's what WildFly supports, see why https://stackoverflow.com/a/70332538 -->
+
+    <!--Compile Scope-->
     <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <version>1.2.17</version>
-      <scope>provided</scope>
+      <groupId>com.hextremelabs</groupId>
+      <artifactId>quickee</artifactId>
+      <version>${quickee.version}</version>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cloudwatchlogs</artifactId>
-      <version>2.18.27</version>
-    </dependency>
-    <dependency>
-      <groupId>com.hextremelabs</groupId>
-      <artifactId>quickee</artifactId>
-      <version>2.0.21</version>
-      <scope>provided</scope>
+      <version>${cloudwatchlogs.version}</version>
     </dependency>
 
     <!--Test Scope-->
@@ -117,10 +116,21 @@
       <version>5.9.0</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.jetbrains.kotlin</groupId>
+      <artifactId>kotlin-stdlib-jdk8</artifactId>
+      <version>${kotlin.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jetbrains.kotlin</groupId>
+      <artifactId>kotlin-test</artifactId>
+      <version>${kotlin.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
-    <finalName>${project.artifactId}-${project.version}-${scmBranch}-${buildNumber}</finalName>
+    <finalName>${project.artifactId}-${project.version}-${scmBranch}-${buildNumber}-uberjar</finalName>
 
     <extensions>
       <extension>
@@ -167,10 +177,84 @@
           <shortRevisionLength>6</shortRevisionLength>
         </configuration>
       </plugin>
+
+      <plugin>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-maven-plugin</artifactId>
+        <version>${kotlin.version}</version>
+        <executions>
+          <execution>
+            <id>compile</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>test-compile</id>
+            <phase>test-compile</phase>
+            <goals>
+              <goal>test-compile</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <jvmTarget>${maven.compiler.target}</jvmTarget>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>compile</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>testCompile</id>
+            <phase>test-compile</phase>
+            <goals>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.22.2</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.4.1</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <minimizeJar>true</minimizeJar>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
